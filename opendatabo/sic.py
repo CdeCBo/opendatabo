@@ -40,12 +40,12 @@ def save_market_prices(when, where, output, fformat):
 
         r = requests.post(url, data=params, headers=headers)
 
-        if (r.status_code == 200):
+        if r.status_code == 200:
             print('Writing output to ' + output_file)
 
             with open(output_file, 'wt') as the_file:
                 the_file.write(r.content.decode('utf-8'))
-        elif (r.status_code == 404):
+        elif r.status_code == 404:
             print('No data for ' + where + ' in ' + when)
     except Exception as e:
         print('Something went wrong :(')
