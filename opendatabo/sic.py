@@ -2,6 +2,8 @@ import datetime
 import io
 from abc import ABCMeta, abstractmethod
 from enum import Enum, unique
+from itertools import islice
+from typing import Generator, Optional
 
 import pandas as pd
 import requests
@@ -17,6 +19,11 @@ class City(Enum):
 
     def to_url_part(self) -> str:
         return self.value
+
+    @classmethod
+    def all(cls):
+        for city in cls:
+            yield City(city.value)
 
 
 class Timeframe(metaclass=ABCMeta):
@@ -43,10 +50,17 @@ class Year(Timeframe):
     def to_url_part(self) -> str:
         return '{}_ano'.format(self._value)
 
+    def __repr__(self):
+        return 'Year({})'.format(self._value)
+
     @staticmethod
     def all_valid():
         for y in range(Year.MIN_VALUE, Year.MAX_VALUE):
             yield Year(y)
+
+
+class DataNotAvailableException(Exception):
+    pass
 
 
 def make_market_prices_url(city: City, timeframe: Timeframe) -> str:
@@ -54,15 +68,32 @@ def make_market_prices_url(city: City, timeframe: Timeframe) -> str:
                                                                                   timeframe.to_url_part())
 
 
-def get_market_prices(city: City, timeframe: Timeframe) -> pd.DataFrame:
+def prepare_raw_market_prices(raw_df: pd.DataFrame) -> pd.DataFrame:
+    df = raw_df.rename(columns={'Precio Mayorista': 'precio_mayorista',
+                                'Precio Minorista': 'precio_minorista',
+                                'Nom_Procedencia': 'procedencia',
+                                'Procedencia': 'procedencia',
+                                })
+
+    return df
+
+
+def get_market_prices(city: City, timeframe: Timeframe, limit: Optional[int] = None) -> pd.DataFrame:
     url = make_market_prices_url(city, timeframe)
 
-    r = requests.post(url, data={'type': 'csv', 'records': 'all'})
+    r = requests.post(url, data={'type': 'csv', 'records': 'all'}, stream=True, allow_redirects=False)
 
     if r.status_code != 200:
-        raise RuntimeError('request was not successful')
+        raise DataNotAvailableException()
 
-    return pd.read_csv(io.StringIO(r.content.decode('utf-8')))
+    if limit is None:
+        data = r.content.decode('utf-8')
+    else:
+        data = '\n'.join(b.decode('utf-8') for b in islice(r.iter_lines(), 0, 1 + limit))
+
+    raw_df = pd.read_csv(io.StringIO(data))
+
+    return prepare_raw_market_prices(raw_df)
 
 
 def save_market_prices(when, where, output, fformat):
