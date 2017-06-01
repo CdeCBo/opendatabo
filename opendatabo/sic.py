@@ -12,7 +12,7 @@ def save_market_prices(when, where, output, fformat):
     if output is None:
         output_file = 'precios_' + where + '_' + when + '.' + fformat
     else:
-        output_file = fformat
+        output_file = output
 
     params = {'type': fformat, 'records': 'all'}
     headers = {'Content-type': 'application/x-www-form-urlencoded'}
@@ -25,8 +25,8 @@ def save_market_prices(when, where, output, fformat):
         if (r.status_code == 200):
             print('Writing output to ' + output_file)
 
-            with open(output_file, 'w') as the_file:
-                the_file.write(r.content)
+            with open(output_file, 'wt') as the_file:
+                the_file.write(r.content.decode('utf-8'))
         elif (r.status_code == 404):
             print('No data for ' + where + ' in ' + when)
     except Exception as e:
