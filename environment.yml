@@ -1,0 +1,5 @@
+name: opendatabo
+dependencies:
+- python=3.6.1
+- requests=2.14.2
+- pytest=3.0.7
