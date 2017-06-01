@@ -17,7 +17,16 @@ def test_get_scz_2008():
     assert set(df.columns) == {'producto', 'variedad', 'procedencia',
                                'precio_mayorista', 'precio_minorista',
                                'observaciones', 'fecha'}
-    assert df.size == 3367
+    assert df.shape[0] == 481
+
+
+def test_get_scz_2008_limit_42():
+    df = get_market_prices(City.SANTA_CRUZ, Year(2008), limit=42)
+
+    assert set(df.columns) == {'producto', 'variedad', 'procedencia',
+                               'precio_mayorista', 'precio_minorista',
+                               'observaciones', 'fecha'}
+    assert df.shape[0] == 42
 
 
 def test_get_scz_2015():
