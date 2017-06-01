@@ -1,5 +1,6 @@
 import datetime
 import io
+import warnings
 from abc import ABCMeta, abstractmethod
 from enum import Enum, unique
 from itertools import islice
@@ -78,16 +79,71 @@ def prepare_raw_market_prices(raw_df: pd.DataFrame) -> pd.DataFrame:
     # Parse string dates with format 'DD/MM/YYYY' into datetime.date objects, and replace the column data
     df.loc[:, 'fecha'] = pd.to_datetime(df['fecha'], format='%d/%m/%Y').dt.date
 
-    # Define the multi-index, making sure there are no duplicates (verify_integrity=True)
-    df.set_index(['fecha', 'producto', 'variedad'], inplace=True, verify_integrity=True)
+    # Define the multi-index, making sure there are no index-duplicates with different data
+    index_cols = ['fecha', 'producto', 'variedad']
+
+    if df.duplicated(subset=index_cols).sum() > 0:
+        warnings.warn('duplicates were found when building the dataset index. duplicates were DROPPED')
+        df.drop_duplicates(subset=index_cols, keep='last', inplace=True)
+
+    df.set_index(index_cols, inplace=True, verify_integrity=True)
+
+    # Parse values and units
+    v, u = parse_column_units(df['precio_mayorista'])
+    df.loc[:, 'precio_mayorista_val'] = v
+    df.loc[:, 'precio_mayorista_unit'] = u
+
+    v, u = parse_column_units(df['precio_minorista'])
+    df.loc[:, 'precio_minorista_val'] = v
+    df.loc[:, 'precio_minorista_unit'] = u
 
     return df
+
+
+def parse_column_units(s: pd.Series) -> (pd.Series, pd.Series):
+    parsed = s.str.extract(r'^(?P<value>\d+)\s*Bs.-/(?P<unit_raw>.*)$', expand=True)
+
+    vals = pd.to_numeric(parsed['value'])
+    units = parsed['unit_raw'].map(parse_unit, na_action='ignore')
+
+    return vals, units
+
+
+def parse_unit(s: str) -> (int, str):
+    pound = lambda x: (x, 'lb')
+    arroba = lambda x: pound(25 * x)
+
+    static = {'Kilo':           (1,     'kg'),
+              'Arroba (@)':     arroba(1),
+              'Amarro':         (1,     '<amarro>'),
+              'Canasta':        (1,     '<canasta>'),
+              'Caja de 150U.':  (150,   'unit'),
+              '100 U.':         (100,   'unit'),
+              'Bolsa (2@)':     arroba(2),
+              'Bolsa Grande':   (1,     '<bolsa grande>'),
+              '25 U.':          (25,    'unit'),
+              'Docena':         (12,    'unit'),
+              'qq':             (112,   'lb'),
+              'Caja de 18 Kg':  (18,    'kg'),
+              'Bolsa (10@)':    arroba(10),
+              'Caja de 23 Kg':  (23,    'kg'),
+              'Unidad':         (1,     'unit'),
+              'Libra':          (1,     'lb'),
+              'Bolsa (8@)':     arroba(8),
+              'Bolsa (4@)':     arroba(4),
+              '3 Libras':       (3,     'lb'),
+              }
+
+    try:
+        return static[s]
+    except KeyError:
+        raise ValueError('unknown unit: {!r}'.format(s))
 
 
 def get_market_prices(city: City, timeframe: Timeframe, limit: Optional[int] = None) -> pd.DataFrame:
     url = make_market_prices_url(city, timeframe)
 
-    r = requests.post(url, data={'type': 'csv', 'records': 'all'}, stream=True, allow_redirects=False)
+    r = requests.post(url, data={'type': 'csv', 'records': 'all'}, stream=limit is not None, allow_redirects=False)
 
     if r.status_code != 200:
         raise DataNotAvailableException()

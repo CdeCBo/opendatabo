@@ -1,3 +1,5 @@
+from operator import itemgetter
+
 import pytest
 
 from opendatabo.sic import get_market_prices, make_market_prices_url, City, Today, Year, DataNotAvailableException
@@ -14,14 +16,14 @@ def test_make_market_prices_url():
 def test_get_scz_2008():
     df = get_market_prices(City.SANTA_CRUZ, Year(2008))
 
-    assert set(df.columns) == {'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'}
+    assert set(df.columns).issuperset({'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'})
     assert df.shape[0] == 481
 
 
 def test_get_scz_2008_limit_42():
     df = get_market_prices(City.SANTA_CRUZ, Year(2008), limit=42)
 
-    assert set(df.columns) == {'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'}
+    assert set(df.columns).issuperset({'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'})
     assert df.shape[0] == 42
 
 
@@ -42,3 +44,32 @@ def test_market_uniform_columns():
 
             assert df.index.names == ['fecha', 'producto', 'variedad']
             assert set(df.columns).issuperset(expected_cols)
+
+
+@pytest.mark.skip(reason='takes too long')
+def test_market_units():
+    all_units = set()
+
+    for city in City.all():
+        for year in Year.all_valid():
+            try:
+                df = get_market_prices(city, year)
+            except DataNotAvailableException:
+                continue
+
+            print(city, year)
+
+            for s in df['precio_mayorista']:
+                try:
+                    all_units.add(s.split('/')[1])
+                except:
+                    pass
+
+            for s in df['precio_minorista']:
+                try:
+                    all_units.add(s.split('/')[1])
+                except:
+                    pass
+
+    import pandas as pd
+    pd.DataFrame({'unit': list(all_units)}).to_csv('units.csv')
