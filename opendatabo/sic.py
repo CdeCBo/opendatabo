@@ -75,6 +75,10 @@ def prepare_raw_market_prices(raw_df: pd.DataFrame) -> pd.DataFrame:
                                 'Procedencia': 'procedencia',
                                 })
 
+    # Parse string dates with format 'DD/MM/YYYY' into datetime.date objects, and replace the column data
+    df.loc[:, 'fecha'] = pd.to_datetime(df['fecha'], format='%d/%m/%Y').dt.date
+
+    # Define the multi-index, making sure there are no duplicates (verify_integrity=True)
     df.set_index(['fecha', 'producto', 'variedad'], inplace=True, verify_integrity=True)
 
     return df
