@@ -1,16 +1,61 @@
+import datetime
 import io
+from abc import ABCMeta, abstractmethod
+from enum import Enum, unique
 
 import pandas as pd
 import requests
 import traceback
 
 
-def get_market_prices(when, where):
-    if when == 'hoy':
-        url = 'http://www.sicsantacruz.com/sic/sic2014/pref_sc_hoy_export.php'
-    else:
-        url = 'http://www.sicsantacruz.com/sic/sic2014/pref_{WHERE}_{WHEN}_ano_export.php'.format(WHERE=where,
-                                                                                                  WHEN=when)
+@unique
+class City(Enum):
+    SANTA_CRUZ = 'sc'
+    CAMIRI = 'cam'
+    COCHABAMBA = 'cbba'
+    TRINIDAD = 'trd'
+
+    def to_url_part(self) -> str:
+        return self.value
+
+
+class Timeframe(metaclass=ABCMeta):
+    @abstractmethod
+    def to_url_part(self) -> str:
+        pass
+
+
+class Today(Timeframe):
+    def to_url_part(self) -> str:
+        return 'hoy'
+
+
+class Year(Timeframe):
+    MIN_VALUE = 2008
+    MAX_VALUE = datetime.datetime.now().year
+
+    def __init__(self, value: int):
+        if value < Year.MIN_VALUE or value > Year.MAX_VALUE:
+            raise ValueError('value')
+
+        self._value = value
+
+    def to_url_part(self) -> str:
+        return '{}_ano'.format(self._value)
+
+    @staticmethod
+    def all_valid():
+        for y in range(Year.MIN_VALUE, Year.MAX_VALUE):
+            yield Year(y)
+
+
+def make_market_prices_url(city: City, timeframe: Timeframe) -> str:
+    return 'http://www.sicsantacruz.com/sic/sic2014/pref_{}_{}_export.php'.format(city.to_url_part(),
+                                                                                  timeframe.to_url_part())
+
+
+def get_market_prices(city: City, timeframe: Timeframe) -> pd.DataFrame:
+    url = make_market_prices_url(city, timeframe)
 
     r = requests.post(url, data={'type': 'csv', 'records': 'all'})
 
