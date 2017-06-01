@@ -22,7 +22,7 @@ def test_get_scz_2008():
 def test_get_scz_today():
     df = get_market_prices(City.SANTA_CRUZ, Today())
 
-    assert set(df.columns) == {'Mercado', 'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'}
+    assert set(df.columns).issuperset({'Mercado', 'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'})
 
 
 def test_get_scz_2008_limit_42():
