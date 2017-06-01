@@ -23,4 +23,4 @@ install:
   - conda env update -f environment.yml
   - source activate opendatabo
 
-script: pytest
+script: PYTHONPATH=. pytest
