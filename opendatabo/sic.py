@@ -9,8 +9,8 @@ def get_market_prices(when, where):
     if when == 'hoy':
         url = 'http://www.sicsantacruz.com/sic/sic2014/pref_sc_hoy_export.php'
     else:
-        url = 'http://www.sicsantacruz.com/sic/sic2014/pref_{WHERE}_{WHEN}_ano_export.php'.replace('{WHEN}', when).replace(
-            '{WHERE}', where)
+        url = 'http://www.sicsantacruz.com/sic/sic2014/pref_{WHERE}_{WHEN}_ano_export.php'.format(WHERE=where,
+                                                                                                  WHEN=when)
 
     r = requests.post(url, data={'type': 'csv', 'records': 'all'})
 
@@ -24,8 +24,8 @@ def save_market_prices(when, where, output, fformat):
     if when == 'hoy':
         url = 'http://www.sicsantacruz.com/sic/sic2014/pref_sc_hoy_export.php'
     else:
-        url = 'http://www.sicsantacruz.com/sic/sic2014/pref_{WHERE}_{WHEN}_ano_export.php'.replace('{WHEN}', when).replace(
-            '{WHERE}', where)
+        url = 'http://www.sicsantacruz.com/sic/sic2014/pref_{WHERE}_{WHEN}_ano_export.php'.format(WHERE=where,
+                                                                                                  WHEN=when)
 
     if output is None:
         output_file = 'precios_' + where + '_' + when + '.' + fformat
