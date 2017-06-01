@@ -1,5 +1,23 @@
+import io
+
+import pandas as pd
 import requests
 import traceback
+
+
+def get_market_prices(when, where):
+    if when == 'hoy':
+        url = 'http://www.sicsantacruz.com/sic/sic2014/pref_sc_hoy_export.php'
+    else:
+        url = 'http://www.sicsantacruz.com/sic/sic2014/pref_{WHERE}_{WHEN}_ano_export.php'.replace('{WHEN}', when).replace(
+            '{WHERE}', where)
+
+    r = requests.post(url, data={'type': 'csv', 'records': 'all'})
+
+    if r.status_code != 200:
+        raise RuntimeError('request was not successful')
+
+    return pd.read_csv(io.StringIO(r.content.decode('utf-8')))
 
 
 def save_market_prices(when, where, output, fformat):

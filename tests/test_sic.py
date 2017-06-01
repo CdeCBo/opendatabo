@@ -1,9 +1,11 @@
 import os
 
-from opendatabo.sic import save_market_prices
+from opendatabo.sic import save_market_prices, get_market_prices
 
 
-def test_save_scz_2008():
-    save_market_prices('2008', 'sc', '/tmp/hello.csv', 'csv')
+def test_get_scz_2008():
+    df = get_market_prices('2008', 'sc')
 
-    assert os.path.exists('/tmp/hello.csv')
+    assert df.columns.tolist() == ['producto', 'variedad', 'Nom_Procedencia', 'Precio Mayorista', 'Precio Minorista',
+                                   'observaciones', 'fecha']
+    assert df.size == 3367
