@@ -19,6 +19,11 @@ def test_get_scz_2008():
     assert set(df.columns).issuperset({'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'})
     assert df.shape[0] == 481
 
+def test_get_scz_today():
+    df = get_market_prices(City.SANTA_CRUZ, Today())
+
+    assert set(df.columns) == {'Mercado', 'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'}
+
 
 def test_get_scz_2008_limit_42():
     df = get_market_prices(City.SANTA_CRUZ, Year(2008), limit=42)
