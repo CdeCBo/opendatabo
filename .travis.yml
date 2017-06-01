@@ -24,3 +24,6 @@ install:
   - source activate opendatabo
 
 script: PYTHONPATH=. pytest
+
+notifications:
+  email: false
