@@ -75,6 +75,8 @@ def prepare_raw_market_prices(raw_df: pd.DataFrame) -> pd.DataFrame:
                                 'Procedencia': 'procedencia',
                                 })
 
+    df.set_index(['fecha', 'producto', 'variedad'], inplace=True, verify_integrity=True)
+
     return df
 
 

@@ -14,18 +14,14 @@ def test_make_market_prices_url():
 def test_get_scz_2008():
     df = get_market_prices(City.SANTA_CRUZ, Year(2008))
 
-    assert set(df.columns) == {'producto', 'variedad', 'procedencia',
-                               'precio_mayorista', 'precio_minorista',
-                               'observaciones', 'fecha'}
+    assert set(df.columns) == {'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'}
     assert df.shape[0] == 481
 
 
 def test_get_scz_2008_limit_42():
     df = get_market_prices(City.SANTA_CRUZ, Year(2008), limit=42)
 
-    assert set(df.columns) == {'producto', 'variedad', 'procedencia',
-                               'precio_mayorista', 'precio_minorista',
-                               'observaciones', 'fecha'}
+    assert set(df.columns) == {'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'}
     assert df.shape[0] == 42
 
 
@@ -35,9 +31,7 @@ def test_get_scz_2015():
 
 
 def test_market_uniform_columns():
-    expected_cols = {'producto', 'variedad', 'procedencia',
-                     'precio_mayorista', 'precio_minorista',
-                     'observaciones', 'fecha'}
+    expected_cols = {'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'}
 
     for city in City.all():
         for year in Year.all_valid():
@@ -46,4 +40,5 @@ def test_market_uniform_columns():
             except DataNotAvailableException:
                 continue
 
+            assert df.index.names == ['fecha', 'producto', 'variedad']
             assert set(df.columns).issuperset(expected_cols)
