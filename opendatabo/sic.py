@@ -79,6 +79,7 @@ def make_market_prices_url(city: City, timeframe: Timeframe) -> str:
                                                                                   timeframe.to_url_part())
 
 
+#TODO: Remove unstructured columns after cleaning them up
 def prepare_raw_market_prices(raw_df: pd.DataFrame) -> pd.DataFrame:
     df = raw_df.rename(columns={'Precio Mayorista': 'precio_mayorista',
                                 'Precio Minorista': 'precio_minorista',
@@ -100,24 +101,26 @@ def prepare_raw_market_prices(raw_df: pd.DataFrame) -> pd.DataFrame:
     df.set_index(index_cols, inplace=True, verify_integrity=True)
 
     # Parse values and units
-    v, u = parse_column_units(df['precio_mayorista'])
-    df.loc[:, 'precio_mayorista_val'] = v
-    df.loc[:, 'precio_mayorista_unit'] = u
+    val, unit_val, unit_name = parse_column_units(df['precio_mayorista'])
+    df.loc[:, 'precio_mayorista_val'] = val
+    df.loc[:, 'precio_mayorista_unit_val'] = unit_val
+    df.loc[:, 'precio_mayorista_unit_name'] = unit_name
 
-    v, u = parse_column_units(df['precio_minorista'])
-    df.loc[:, 'precio_minorista_val'] = v
-    df.loc[:, 'precio_minorista_unit'] = u
+    val, unit_val, unit_name = parse_column_units(df['precio_minorista'])
+    df.loc[:, 'precio_minorista_val'] = val
+    df.loc[:, 'precio_minorista_unit_val'] = unit_val
+    df.loc[:, 'preio_minorista_unit_name'] = unit_name
 
     return df
 
 
-def parse_column_units(s: pd.Series) -> (pd.Series, pd.Series):
+def parse_column_units(s: pd.Series) -> (pd.Series, pd.Series, pd.Series):
     parsed = s.str.extract(r'^(?P<value>\d+)\s*Bs.-/(?P<unit_raw>.*)$', expand=True)
 
     vals = pd.to_numeric(parsed['value'])
     units = parsed['unit_raw'].map(parse_unit, na_action='ignore')
 
-    return vals, units
+    return vals, units.map(lambda u: u[0]), units.map(lambda u: u[1])
 
 
 def parse_unit(s: str) -> (int, str):
