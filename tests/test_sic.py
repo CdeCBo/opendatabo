@@ -1,8 +1,9 @@
-from operator import itemgetter
-
+import numpy as np
+import pandas as pd
 import pytest
 
-from opendatabo.sic import get_market_prices, make_market_prices_url, City, Today, Year, DataNotAvailableException
+from opendatabo.sic import get_market_prices, make_market_prices_url, City, Today, Year, DataNotAvailableException, \
+    parse_column_units
 
 
 def test_make_market_prices_url():
@@ -53,6 +54,14 @@ def test_market_uniform_columns():
             assert set(df.columns).issuperset(expected_cols)
 
 
+def test_parse_column_units():
+    x, u_v, u_k = parse_column_units(pd.Series(['1 Bs.-/Unidad', np.nan, np.nan]))
+
+    assert x.fillna(-1).tolist() == [1.0, -1, -1]
+    assert u_v.fillna(-1).tolist() == [1.0, -1, -1]
+    assert u_k.fillna('').tolist() == ['unit', '', '']
+
+
 @pytest.mark.skip(reason='takes too long')
 def test_market_units():
     all_units = set()
@@ -78,5 +87,4 @@ def test_market_units():
                 except:
                     pass
 
-    import pandas as pd
     pd.DataFrame({'unit': list(all_units)}).to_csv('units.csv')

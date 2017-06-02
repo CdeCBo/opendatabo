@@ -118,9 +118,12 @@ def parse_column_units(s: pd.Series) -> (pd.Series, pd.Series, pd.Series):
     parsed = s.str.extract(r'^(?P<value>\d+)\s*Bs.-/(?P<unit_raw>.*)$', expand=True)
 
     vals = pd.to_numeric(parsed['value'])
-    units = parsed['unit_raw'].map(parse_unit, na_action='ignore')
+    unit = parsed['unit_raw'].map(parse_unit, na_action='ignore')
 
-    return vals, units.map(lambda u: u[0]), units.map(lambda u: u[1])
+    unit_val = unit.map(lambda u: u[0], na_action='ignore')
+    unit_key = unit.map(lambda u: u[1], na_action='ignore')
+
+    return vals, unit_val, unit_key
 
 
 def parse_unit(s: str) -> (int, str):
