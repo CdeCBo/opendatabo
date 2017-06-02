@@ -1,12 +1,14 @@
 import argparse
 
 from opendatabo.sic import save_market_prices
+from opendatabo.sic import City, Year, Today
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Export data from SIC's website to a file")
 
-    # Not an FB plug
+    # TODO: Kill format argument
+    parser.add_argument('-c', '--clean', action='store_false', help='Give a better structure to the data')
     parser.add_argument('-f', '--format', type=str, default='csv', help='File format to request',
                         choices=['csv', 'xml'])
     parser.add_argument('-l', '--location', type=str, default='sc', help="City code, known values are [sc, trd, cbb]")
@@ -15,4 +17,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    save_market_prices(args.when, args.location, args.output, args.format)
+    if args.when == 'hoy':
+        timeframe = Today()
+    else:
+        timeframe = Year(int(args.when))
+    save_market_prices(City(args.location), timeframe, args.format, args.clean, args.output)

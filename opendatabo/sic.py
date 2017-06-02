@@ -32,10 +32,17 @@ class Timeframe(metaclass=ABCMeta):
     def to_url_part(self) -> str:
         pass
 
+    @abstractmethod
+    def to_filename_suffix(self) -> str:
+        pass
+
 
 class Today(Timeframe):
     def to_url_part(self) -> str:
         return 'hoy'
+
+    def to_filename_suffix(self) -> str:
+        return datetime.datetime.today().strftime('%Y%m%d')
 
 
 class Year(Timeframe):
@@ -50,6 +57,9 @@ class Year(Timeframe):
 
     def to_url_part(self) -> str:
         return '{}_ano'.format(self._value)
+
+    def to_filename_suffix(self) -> str:
+        return '{}'.format(self._value)
 
     def __repr__(self):
         return 'Year({})'.format(self._value)
@@ -140,10 +150,10 @@ def parse_unit(s: str) -> (int, str):
         raise ValueError('unknown unit: {!r}'.format(s))
 
 
-def get_market_prices(city: City, timeframe: Timeframe, limit: Optional[int] = None) -> pd.DataFrame:
+def get_market_prices(city: City, timeframe: Timeframe, fformat: str = 'csv', limit: Optional[int] = None, raw: bool = False) -> pd.DataFrame:
     url = make_market_prices_url(city, timeframe)
 
-    r = requests.post(url, data={'type': 'csv', 'records': 'all'}, stream=limit is not None, allow_redirects=False)
+    r = requests.post(url, data={'type': fformat, 'records': 'all'}, stream=limit is not None, allow_redirects=False)
 
     if r.status_code != 200:
         raise DataNotAvailableException()
@@ -155,37 +165,17 @@ def get_market_prices(city: City, timeframe: Timeframe, limit: Optional[int] = N
 
     raw_df = pd.read_csv(io.StringIO(data))
 
-    return prepare_raw_market_prices(raw_df)
-
-
-def save_market_prices(when, where, output, fformat):
-    if when == 'hoy':
-        url = 'http://www.sicsantacruz.com/sic/sic2014/pref_sc_hoy_export.php'
-        when = datetime.datetime.today().strftime('%Y%m%d')
+    if raw:
+        return raw_df
     else:
-        url = 'http://www.sicsantacruz.com/sic/sic2014/pref_{WHERE}_{WHEN}_ano_export.php'.format(WHERE=where,
-                                                                                                  WHEN=when)
+        return prepare_raw_market_prices(raw_df)
 
+
+def save_market_prices(city: City, timeframe: Timeframe, fformat: str, raw: bool = True, output: Optional[str] = None) -> None:
+    df = get_market_prices(city, timeframe, raw=raw)
     if output is None:
-        output_file = 'precios_' + where + '_' + when + '.' + fformat
+        output_file = 'precios_' + city.value + '_' + timeframe.to_filename_suffix() + '.' + fformat
     else:
         output_file = output
+    df.to_csv(output_file)
 
-    params = {'type': fformat, 'records': 'all'}
-    headers = {'Content-type': 'application/x-www-form-urlencoded'}
-
-    try:
-        print('Requesting data for ' + where + ' in ' + when + ' from:\n' + url)
-
-        r = requests.post(url, data=params, headers=headers)
-
-        if r.status_code == 200:
-            print('Writing output to ' + output_file)
-
-            with open(output_file, 'wt') as the_file:
-                the_file.write(r.content.decode('utf-8'))
-        elif r.status_code == 404:
-            print('No data for ' + where + ' in ' + when)
-    except Exception as e:
-        print('Something went wrong :(')
-        print(traceback.format_exc())
