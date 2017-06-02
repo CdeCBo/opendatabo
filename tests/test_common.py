@@ -31,7 +31,6 @@ def test_retry_on_different_type():
         raise ValueError
 
     with pytest.raises(ValueError):
-        r = subject()
+        subject()
 
-        assert next(raise_count) == 1
-        assert r == 3
+    assert next(raise_count) == 1
