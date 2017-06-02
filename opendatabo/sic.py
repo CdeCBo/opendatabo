@@ -79,7 +79,6 @@ def make_market_prices_url(city: City, timeframe: Timeframe) -> str:
                                                                                   timeframe.to_url_part())
 
 
-#TODO: Remove unstructured columns after cleaning them up
 def prepare_raw_market_prices(raw_df: pd.DataFrame) -> pd.DataFrame:
     df = raw_df.rename(columns={'Precio Mayorista': 'precio_mayorista',
                                 'Precio Minorista': 'precio_minorista',
@@ -105,11 +104,13 @@ def prepare_raw_market_prices(raw_df: pd.DataFrame) -> pd.DataFrame:
     df.loc[:, 'precio_mayorista_val'] = val
     df.loc[:, 'precio_mayorista_unit_val'] = unit_val
     df.loc[:, 'precio_mayorista_unit_name'] = unit_name
+    del df['precio_mayorista']
 
     val, unit_val, unit_name = parse_column_units(df['precio_minorista'])
     df.loc[:, 'precio_minorista_val'] = val
     df.loc[:, 'precio_minorista_unit_val'] = unit_val
-    df.loc[:, 'preio_minorista_unit_name'] = unit_name
+    df.loc[:, 'precio_minorista_unit_name'] = unit_name
+    del df['precio_minorista']
 
     return df
 

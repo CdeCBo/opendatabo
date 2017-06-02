@@ -6,6 +6,12 @@ from opendatabo.sic import get_market_prices, make_market_prices_url, City, Toda
     parse_column_units
 
 
+EXPECTED_COLS = {'procedencia', 'observaciones',
+                 'precio_mayorista_val', 'precio_mayorista_unit_val', 'precio_mayorista_unit_name',
+                 'precio_minorista_val', 'precio_minorista_unit_val', 'precio_minorista_unit_name',
+                 }
+
+
 def test_make_market_prices_url():
     assert make_market_prices_url(City.SANTA_CRUZ, Today()) \
            == 'http://www.sicsantacruz.com/sic/sic2014/pref_sc_hoy_export.php'
@@ -17,7 +23,7 @@ def test_make_market_prices_url():
 def test_get_scz_2008():
     df = get_market_prices(City.SANTA_CRUZ, Year(2008))
 
-    assert set(df.columns).issuperset({'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'})
+    assert set(df.columns).issuperset(EXPECTED_COLS)
     assert df.shape[0] == 481
 
 
@@ -25,13 +31,13 @@ def test_get_scz_2008():
 def test_get_scz_today():
     df = get_market_prices(City.SANTA_CRUZ, Today())
 
-    assert set(df.columns).issuperset({'Mercado', 'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'})
+    assert set(df.columns).issuperset(EXPECTED_COLS)
 
 
 def test_get_scz_2008_limit_42():
     df = get_market_prices(City.SANTA_CRUZ, Year(2008), limit=42)
 
-    assert set(df.columns).issuperset({'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'})
+    assert set(df.columns).issuperset(EXPECTED_COLS)
     assert df.shape[0] == 42
 
 
@@ -41,8 +47,6 @@ def test_get_scz_2015():
 
 
 def test_market_uniform_columns():
-    expected_cols = {'procedencia', 'precio_mayorista', 'precio_minorista', 'observaciones'}
-
     for city in City.all():
         for year in Year.all_valid():
             try:
@@ -51,7 +55,7 @@ def test_market_uniform_columns():
                 continue
 
             assert df.index.names == ['fecha', 'producto', 'variedad']
-            assert set(df.columns).issuperset(expected_cols)
+            assert set(df.columns).issuperset(EXPECTED_COLS)
 
 
 def test_parse_column_units():
