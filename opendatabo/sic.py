@@ -10,6 +10,8 @@ import pandas as pd
 import requests
 import traceback
 
+from opendatabo.common import retry_on
+
 
 @unique
 class City(Enum):
@@ -71,6 +73,10 @@ class Year(Timeframe):
 
 
 class DataNotAvailableException(Exception):
+    pass
+
+
+class RemoteErrorException(Exception):
     pass
 
 
@@ -158,6 +164,7 @@ def parse_unit(s: str) -> (int, str):
         raise ValueError('unknown unit: {!r}'.format(s))
 
 
+@retry_on(RemoteErrorException, retries=6, delay=lambda i: 2.0 ** i)
 def get_market_prices(city: City, timeframe: Timeframe, limit: Optional[int] = None, raw: bool = False) -> pd.DataFrame:
     url = make_market_prices_url(city, timeframe)
 
@@ -170,6 +177,9 @@ def get_market_prices(city: City, timeframe: Timeframe, limit: Optional[int] = N
         data = r.content.decode('utf-8')
     else:
         data = '\n'.join(b.decode('utf-8') for b in islice(r.iter_lines(), 0, 1 + limit))
+
+    if 'Fatal error' in data:
+        raise RemoteErrorException()
 
     raw_df = pd.read_csv(io.StringIO(data))
 
