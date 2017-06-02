@@ -84,6 +84,7 @@ def prepare_raw_market_prices(raw_df: pd.DataFrame) -> pd.DataFrame:
                                 'Precio Minorista': 'precio_minorista',
                                 'Nom_Procedencia': 'procedencia',
                                 'Procedencia': 'procedencia',
+                                'Mercado': 'mercado',
                                 })
 
     # Parse string dates with format 'DD/MM/YYYY' into datetime.date objects, and replace the column data
