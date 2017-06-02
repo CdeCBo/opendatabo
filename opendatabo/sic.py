@@ -157,10 +157,10 @@ def parse_unit(s: str) -> (int, str):
         raise ValueError('unknown unit: {!r}'.format(s))
 
 
-def get_market_prices(city: City, timeframe: Timeframe, fformat: str = 'csv', limit: Optional[int] = None, raw: bool = False) -> pd.DataFrame:
+def get_market_prices(city: City, timeframe: Timeframe, limit: Optional[int] = None, raw: bool = False) -> pd.DataFrame:
     url = make_market_prices_url(city, timeframe)
 
-    r = requests.post(url, data={'type': fformat, 'records': 'all'}, stream=limit is not None, allow_redirects=False)
+    r = requests.post(url, data={'type': 'csv', 'records': 'all'}, stream=limit is not None, allow_redirects=False)
 
     if r.status_code != 200:
         raise DataNotAvailableException()
@@ -178,10 +178,10 @@ def get_market_prices(city: City, timeframe: Timeframe, fformat: str = 'csv', li
         return prepare_raw_market_prices(raw_df)
 
 
-def save_market_prices(city: City, timeframe: Timeframe, fformat: str, raw: bool = True, output: Optional[str] = None) -> None:
+def save_market_prices(city: City, timeframe: Timeframe, raw: bool = True, output: Optional[str] = None) -> None:
     df = get_market_prices(city, timeframe, raw=raw)
     if output is None:
-        output_file = 'precios_' + city.value + '_' + timeframe.to_filename_suffix() + '.' + fformat
+        output_file = 'precios_' + city.value + '_' + timeframe.to_filename_suffix() + '.csv'
     else:
         output_file = output
     df.to_csv(output_file)
