@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from opendatabo.sic import get_market_prices, make_market_prices_url, City, Today, Year, DataNotAvailableException, \
-    parse_column_units
-
+from opendatabo.sic import get_market_prices, make_market_prices_url, City, Today, Year, parse_column_units
+from opendatabo.common import DataNotAvailableException
 
 EXPECTED_COLS = {'procedencia', 'observaciones',
                  'precio_mayorista_val', 'precio_mayorista_unit_val', 'precio_mayorista_unit_name',

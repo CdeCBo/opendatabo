@@ -4,13 +4,12 @@ import warnings
 from abc import ABCMeta, abstractmethod
 from enum import Enum, unique
 from itertools import islice
-from typing import Generator, Optional
+from typing import Optional
 
 import pandas as pd
 import requests
-import traceback
 
-from opendatabo.common import retry_on
+from opendatabo.common import retry_on, DataNotAvailableException
 
 
 @unique
@@ -70,10 +69,6 @@ class Year(Timeframe):
     def all_valid():
         for y in range(Year.MIN_VALUE, Year.MAX_VALUE):
             yield Year(y)
-
-
-class DataNotAvailableException(Exception):
-    pass
 
 
 class RemoteErrorException(Exception):

@@ -3,6 +3,10 @@ from typing import Type, Callable
 import time
 
 
+class DataNotAvailableException(Exception):
+    pass
+
+
 def retry_on(exception_type: Type, retries: int = 1, delay: Callable[[int], float] = lambda i: 0.0):
     if retries < 0:
         raise ValueError('retries >= 0')
