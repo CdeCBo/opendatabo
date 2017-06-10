@@ -24,9 +24,6 @@ class LatLng:
     def __repr__(self):
         return 'LatLng({!r}, {!r})'.format(self.lat, self.lng)
 
-    def to_pair(self):
-        return self.lat, self.lng
-
 
 class BusLine:
     def __init__(self, line_id: int, name: str, speed: Decimal, distance: Decimal, total_time: Decimal, points: List[LatLng]):
@@ -40,16 +37,23 @@ class BusLine:
     def to_geojson(self):
         return geojson.dumps(self, cls=GeoJSONEncoderWithDecimal)
 
-    def iter_coords(self):
-        for point in self.points:
-            yield point.to_pair()
-
     @property
     def __geo_interface__(self):
         props = self.__dict__.copy()
         del props['points']
-        geometry = geojson.LineString(list(self.iter_coords()))
+
+        coords = []
+        for point in self.points:
+            coords.append((point.lng, point.lat))
+
+        geometry = geojson.LineString(coords)
+
         return geojson.Feature(id=self.line_id, geometry=geometry, properties=props)
+
+
+def bus_lines_to_geojson(lines: List[BusLine]) -> str:
+    coll = geojson.FeatureCollection(lines)
+    return geojson.dumps(coll, cls=GeoJSONEncoderWithDecimal)
 
 
 def get_bus_line(line_id: int) -> BusLine:
