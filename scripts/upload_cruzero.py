@@ -4,6 +4,7 @@ import datetime
 import io
 import requests
 import structlog
+import sys
 
 from opendatabo.cruzero import get_all_bus_line_ids, get_bus_line, bus_lines_to_geojson
 
@@ -18,10 +19,16 @@ if __name__ == '__main__':
                         help='API Key for said host')
     parser.add_argument('-p', '--package', type=str,
                         help='Target package (dataset) ID where the resource will be created')
+    parser.add_argument('--id', type=str,
+                        help='Update an existing resource with this ID')
     parser.add_argument('-n', '--name', type=str, default='lineas-de-buses.json',
                         help='Filename for upload')
 
     args = parser.parse_args()
+
+    if bool(args.package) == bool(args.id):
+        print('Specify ONE of --package OR --id', file=sys.stderr)
+        exit(1)
 
     line_ids = get_all_bus_line_ids()
     _logger.info('line_ids', len=len(line_ids))
@@ -38,15 +45,26 @@ if __name__ == '__main__':
 
     data = bus_lines_to_geojson(bus_lines)
 
+    if args.id:
+        # Updating
+        url = 'http://{}/api/action/resource_update'.format(args.host)
+        params = {'id': args.id,
+                  }
+    else:
+        # Creating
+        url = 'http://{}/api/action/resource_create'.format(args.host)
+        params = {'package_id': args.package,
+                  'format': 'geojson',
+                  'name': 'CZR ' + datetime.date.today().isoformat(),
+                  }
+
     _logger.info('upload start')
 
-    r = requests.post('http://{}/api/action/resource_create'.format(args.host),
-                      data={'package_id': args.package,
-                            'format': 'geojson',
-                            'name': 'CZR ' + datetime.date.today().isoformat(),
-                            },
+    r = requests.post(url,
+                      data=params,
                       headers={'X-CKAN-API-Key': args.key},
-                      files=[('upload', (args.name, io.StringIO(data)))])
+                      files=[('upload', (args.name, io.StringIO(data)))],
+                      )
 
     if r.status_code != 200:
         _logger.error('save fail', error=r.text)
