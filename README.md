@@ -36,3 +36,5 @@ PYTHONPATH=. pytest
 set PYTHONPATH=.
 pytest
 ```
+
+Built with ❤️ by CdeC Bolivia.
