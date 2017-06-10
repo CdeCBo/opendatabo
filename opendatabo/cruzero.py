@@ -3,9 +3,17 @@ from decimal import Decimal
 from operator import itemgetter
 from typing import List
 
+import geojson
 import requests
 
 from opendatabo.common import DataNotAvailableException
+
+
+class GeoJSONEncoderWithDecimal(geojson.GeoJSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(GeoJSONEncoderWithDecimal, self).default(obj)
 
 
 class LatLng:
@@ -16,6 +24,9 @@ class LatLng:
     def __repr__(self):
         return 'LatLng({!r}, {!r})'.format(self.lat, self.lng)
 
+    def to_pair(self):
+        return self.lat, self.lng
+
 
 class BusLine:
     def __init__(self, line_id: int, name: str, speed: Decimal, distance: Decimal, total_time: Decimal, points: List[LatLng]):
@@ -25,6 +36,20 @@ class BusLine:
         self.distance = distance
         self.total_time = total_time
         self.points = points
+
+    def to_geojson(self):
+        return geojson.dumps(self, cls=GeoJSONEncoderWithDecimal)
+
+    def iter_coords(self):
+        for point in self.points:
+            yield point.to_pair()
+
+    @property
+    def __geo_interface__(self):
+        props = self.__dict__.copy()
+        del props['points']
+        geometry = geojson.LineString(list(self.iter_coords()))
+        return geojson.Feature(id=self.line_id, geometry=geometry, properties=props)
 
 
 def get_bus_line(line_id: int) -> BusLine:
