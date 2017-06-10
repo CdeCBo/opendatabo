@@ -72,7 +72,7 @@ def get_bus_line(line_id: int) -> BusLine:
                        points=points,
                        )
 
-    for point_data in sorted(data['lineasbusesruta'], key=itemgetter('lbrOrden')):
+    for point_data in data['lineasbusesruta']:
         points.append(LatLng(lat=Decimal(point_data['lbrLatitud']),
                              lng=Decimal(point_data['lbrLongitud']),
                              ))
