@@ -22,6 +22,7 @@ def fetch_data(year: int, month: int, municipality: int) -> pd.DataFrame:
 
 
 def clean_municipality_data(df: pd.DataFrame) -> pd.DataFrame:
+  # Need to get rid of first (weird header) and last (total) rows
   #df.drop(df.loc[0, :])
   return df
 
