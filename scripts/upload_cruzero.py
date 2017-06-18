@@ -11,7 +11,7 @@ _logger = structlog.get_logger()
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Export data from SIC's website to a file")
 
-    parser.add_argument('--host', type=str, default='ec2-52-34-181-186.us-west-2.compute.amazonaws.com',
+    parser.add_argument('--host', type=str, required=True,
                         help='Hostname of the target CKAN node')
     parser.add_argument('-k', '--key', type=str,
                         help='API Key for said host')
