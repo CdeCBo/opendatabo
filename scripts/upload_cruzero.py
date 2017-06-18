@@ -1,10 +1,8 @@
 import argparse
-import datetime
 
+import ckanapi
 import io
-import requests
 import structlog
-import sys
 
 from opendatabo.cruzero import get_all_bus_line_ids, get_bus_line, bus_lines_to_geojson
 
@@ -17,18 +15,14 @@ if __name__ == '__main__':
                         help='Hostname of the target CKAN node')
     parser.add_argument('-k', '--key', type=str,
                         help='API Key for said host')
-    parser.add_argument('-p', '--package', type=str,
+    parser.add_argument('-p', '--package', type=str, required=True,
                         help='Target package (dataset) ID where the resource will be created')
-    parser.add_argument('--id', type=str,
-                        help='Update an existing resource with this ID')
+    parser.add_argument('-r', '--resource', type=str, required=True,
+                        help='Target resource name')
     parser.add_argument('-n', '--name', type=str, default='lineas-de-buses.json',
                         help='Filename for upload')
 
     args = parser.parse_args()
-
-    if bool(args.package) == bool(args.id):
-        print('Specify ONE of --package OR --id', file=sys.stderr)
-        exit(1)
 
     line_ids = get_all_bus_line_ids()
     _logger.info('line_ids', len=len(line_ids))
@@ -45,35 +39,38 @@ if __name__ == '__main__':
 
     data = bus_lines_to_geojson(bus_lines)
 
-    if args.id:
-        # Updating
-        url = 'http://{}/api/action/resource_update'.format(args.host)
-        params = {'id': args.id,
-                  }
-    else:
-        # Creating
-        url = 'http://{}/api/action/resource_create'.format(args.host)
-        params = {'package_id': args.package,
-                  'format': 'geojson',
-                  'name': 'CZR',
-                  }
+    ckan = ckanapi.RemoteCKAN('http://' + args.host, apikey=args.key)
 
-    _logger.info('upload start')
+    try:
+        package = ckan.action.package_show(id=args.package)
 
-    r = requests.post(url,
-                      data=params,
-                      headers={'X-CKAN-API-Key': args.key},
-                      files=[('upload', (args.name, io.StringIO(data)))],
-                      )
+        resources = list(filter(lambda r: r['name'] == args.resource, package['resources']))
 
-    if r.status_code != 200:
-        _logger.error('save fail', error=r.text)
+        if len(resources) > 2:
+            _logger.error('more than one matching resources found')
+            exit(1)
+
+        if len(resources) == 0:
+            # Creating
+            _logger.info('creating resource')
+            res = ckan.action.resource_create(package_id=args.package,
+                                              format='geojson',
+                                              name=args.resource,
+                                              upload=(args.name, io.StringIO(data)),
+                                              )
+        else:
+            # Updating
+            _logger.info('updating resource')
+            res = ckan.action.resource_update(id=resources[0]['id'],
+                                              upload=(args.name, io.StringIO(data)),
+                                              )
+
+        _logger.info('saved', resource=res)
+
+    except ckanapi.errors.NotFound:
+        _logger.error('package does not exist')
         exit(1)
 
-    response = r.json()
-
-    if not response['success']:
-        _logger.error('save fail', error=response['error'])
+    except ckanapi.errors.CKANAPIError as e:
+        _logger.error('ckan api fail', error=e)
         exit(1)
-
-    _logger.info('saved', message=response['result'])
