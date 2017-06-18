@@ -55,7 +55,7 @@ if __name__ == '__main__':
         url = 'http://{}/api/action/resource_create'.format(args.host)
         params = {'package_id': args.package,
                   'format': 'geojson',
-                  'name': 'CZR ' + datetime.date.today().isoformat(),
+                  'name': 'CZR',
                   }
 
     _logger.info('upload start')
