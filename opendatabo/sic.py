@@ -56,6 +56,10 @@ class Year(Timeframe):
 
         self._value = value
 
+    @property
+    def value(self):
+        return self._value
+
     def to_url_part(self) -> str:
         return '{}_ano'.format(self._value)
 
@@ -67,7 +71,7 @@ class Year(Timeframe):
 
     @staticmethod
     def all_valid():
-        for y in range(Year.MIN_VALUE, Year.MAX_VALUE):
+        for y in range(Year.MIN_VALUE, Year.MAX_VALUE + 1):
             yield Year(y)
 
 
